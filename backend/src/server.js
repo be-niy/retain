@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
@@ -25,6 +27,19 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/admin', adminRoutes);
+
+if (process.env.NODE_ENV === 'production') {
+  const frontendDist = fileURLToPath(
+    new URL('../../frontend/dist/', import.meta.url)
+  );
+
+  app.use(express.static(frontendDist));
+
+  app.get(/^(?!\/api(?:\/|$)).*/, (req, res, next) => {
+    if (path.extname(req.path)) return next();
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Endpoint not found' });
